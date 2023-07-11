@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="stylesheet" href="src/style/normalize.css">
+    <link rel="stylesheet" href="src/style/main.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Генератор штрихкодов</title>
+  </head>
+  <body>
+  <div class="controls" id="create-barcode">
+    <form id="file-form">
+        <label for="goodsTable" class="button-55" id="custom-load-button">
+            Выбрать файл таблицы
+        </label>
+      <input type="file" name="goodsTable" id="goodsTable" accept=".xlsx">
+      <span id="file-chosen">Файл не выбран</span>
+      <input type="submit" value="Загрузить данные из таблицы" class="button-55">
+    </form>
+      <button id="load-local" class="button-55">Загрузить данные из локального хранилища</button>
+      <button id="print-all" class="button-55">Печатать все</button>
+  </div>
+  <div class="book_cards_container">
+  </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
