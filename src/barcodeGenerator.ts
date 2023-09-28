@@ -115,7 +115,7 @@ export async function createCanvas(barcode: string) {
       unit: "mm",
       format: [60, 58]
     });
-    doc.addImage(data, "PNG", 60, -2, 58, 60, "", "NONE", 90);
+    doc.addImage(data, "PNG", 0, 0, 60, 58);
     doc.save(`${prefix}${barcode.slice(-4)}${normalizedBookName}.pdf`);
   }
 }
