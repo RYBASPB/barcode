@@ -48,6 +48,7 @@ export function createBookCard(bookInfo: IBook) {
 
   return bookCard;
 }
+
 function createBarcode(element: SVGSVGElement, number: string) {
   JsBarcode(element, number, {
     displayValue: false,

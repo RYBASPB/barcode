@@ -3,6 +3,7 @@ import { read, utils } from "xlsx";
 
 let booksState: IBook[] = [];
 let groupedBooksState: Record<string, IBook[]> = {};
+
 export interface IBook {
   barcode: string;
   brand: string;
@@ -72,6 +73,7 @@ function groupBooksBySeller(books : IBook[]) {
 function createBookCards() {
   createLayout(groupedBooksState);
 }
+
 function onLoadFromLocalStorage() {
   if (booksState && booksState.length) {
     alert("Данные уже загружены");
