@@ -65,8 +65,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 60mm;
-  height: 58mm;
+  width: 58mm;
+  height: 40mm;
   margin: 0;
   padding: 4mm;
 }

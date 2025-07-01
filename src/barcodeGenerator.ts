@@ -114,9 +114,9 @@ export async function createCanvas(barcode: string) {
     const doc = new jsPDF({
       orientation: "landscape",
       unit: "mm",
-      format: [60, 58]
+      format: [58, 40]
     });
-    doc.addImage(data, "PNG", 0, 0, 60, 58);
+    doc.addImage(data, "PNG", 0, 0, 58, 40);
     doc.save(`${prefix}${barcode.slice(-4)}${normalizedBookName}.pdf`);
   }
 }
