@@ -13,6 +13,13 @@ export interface IBook {
   seller: string;
 }
 
+function normalizeCellValue(value: unknown) {
+  if (value === undefined || value === null) {
+    return "";
+  }
+  return String(value).trim();
+}
+
 async function getBooksInfoFromXLSX(elements : HTMLFormControlsCollection) {
   if (
       "goodsTable" in elements &&
@@ -20,42 +27,55 @@ async function getBooksInfoFromXLSX(elements : HTMLFormControlsCollection) {
       elements.goodsTable.files
   ) {
     const table = elements.goodsTable.files[0];
+    if (!table) {
+      throw new Error("Файл таблицы не выбран");
+    }
+
     const jsonFromTable = await excelToJson(table);
-    if (jsonFromTable instanceof Array) {
-      const books = jsonFromTable.map((row) => {
+    if (jsonFromTable instanceof Array && jsonFromTable.length) {
+      const books = jsonFromTable
+        .map((row) => {
         const bookParams: IBook = {
-          author: row["Автор"],
-          barcode: row["Баркод"],
-          brand: row["Бренд"],
-          code: row["Артикул продавца"],
-          name: row["Наименование"],
-          seller: row["seller"]
+          author: normalizeCellValue(row["Автор"]),
+          barcode: normalizeCellValue(row["Баркод"]),
+          brand: normalizeCellValue(row["Бренд"]),
+          code: normalizeCellValue(row["Артикул продавца"]),
+          name: normalizeCellValue(row["Наименование"]),
+          seller: normalizeCellValue(row["seller"])
         };
         return bookParams;
-      });
+      })
+        .filter((book) => book.barcode);
+
+      if (!books.length) {
+        throw new Error("В таблице не найден столбец 'Баркод' или он пустой");
+      }
+
       return books;
     }
+
+    throw new Error("Таблица пуста или не удалось прочитать данные");
   }
 }
 
 async function excelToJson(table: File) {
   const data = await table.arrayBuffer();
-  const workbook = read(data);
+  const workbook = read(data, { type: "array" });
   let jsonDataFromAllWorksheets: Record<string, string>[] = [];
-  try {
-    for (const worksheetName in workbook.Sheets) {
-      const worksheet = workbook.Sheets[worksheetName];
-      const jsonFromTable: Record<string, string>[] = utils.sheet_to_json(worksheet);
-      const jsonFromTableWithSeller: Record<string, string>[] = jsonFromTable.map((row : Record<string, string>) => {
-        row["seller"] = worksheetName;
-        return row;
-      })
-      jsonDataFromAllWorksheets = [...jsonDataFromAllWorksheets, ...jsonFromTableWithSeller];
-    }
-    return jsonDataFromAllWorksheets;
-  } catch (e) {
-    console.error(e);
+
+  for (const worksheetName of workbook.SheetNames) {
+    const worksheet = workbook.Sheets[worksheetName];
+    const jsonFromTable: Record<string, string>[] = utils.sheet_to_json(worksheet, {
+      defval: ""
+    });
+    const jsonFromTableWithSeller: Record<string, string>[] = jsonFromTable.map((row : Record<string, string>) => {
+      row["seller"] = worksheetName;
+      return row;
+    });
+    jsonDataFromAllWorksheets = [...jsonDataFromAllWorksheets, ...jsonFromTableWithSeller];
   }
+
+  return jsonDataFromAllWorksheets;
 }
 
 function groupBooksBySeller(books : IBook[]) {
@@ -94,20 +114,27 @@ function onLoadFromLocalStorage() {
 
 async function onSubmitCreateBarcodeListener(e: SubmitEvent) {
   e.preventDefault();
-  if (booksState && booksState.length) {
-    booksState = [];
-    document.querySelector(".book_cards_container")!.innerHTML = "";
-  }
-  if (e.target && e.target instanceof HTMLFormElement) {
-    const elements = e.target.elements;
-    const books = await getBooksInfoFromXLSX(elements);
-    if (books) {
-      const groupedBooks = groupBooksBySeller(books);
-      booksState = books;
-      groupedBooksState = groupedBooks;
-      saveToLocalStorage(books, groupedBooks);
-      createBookCards();
+  try {
+    if (booksState && booksState.length) {
+      booksState = [];
+      groupedBooksState = {};
+      document.querySelector(".book_cards_container")!.innerHTML = "";
     }
+    if (e.target && e.target instanceof HTMLFormElement) {
+      const elements = e.target.elements;
+      const books = await getBooksInfoFromXLSX(elements);
+      if (books) {
+        const groupedBooks = groupBooksBySeller(books);
+        booksState = books;
+        groupedBooksState = groupedBooks;
+        saveToLocalStorage(books, groupedBooks);
+        createBookCards();
+      }
+    }
+  } catch (error) {
+    console.error(error);
+    const message = error instanceof Error ? error.message : "Не удалось загрузить таблицу";
+    alert(message);
   }
 }
 
@@ -145,6 +172,7 @@ function changeFileNameOnLoadListener() {
         e.target &&
         e.target instanceof HTMLInputElement &&
         e.target.files &&
+        e.target.files.length > 0 &&
         fileChosen
       ) {
         fileChosen.innerText = e.target.files[0].name;
